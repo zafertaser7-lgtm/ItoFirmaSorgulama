@@ -1,0 +1,357 @@
+/* Genel Ayarlar ve Fontlar */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f4f7f6;
+    color: #333;
+}
+
+/* Header (Üst Mavi Alan) */
+.header {
+    background: linear-gradient(135deg, #003366 0%, #00509e 100%);
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.logo-placeholder {
+    background-color: white;
+    color: #003366;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 20px;
+    border: 2px solid #fff;
+}
+
+.header h1 {
+    font-size: 24px;
+    letter-spacing: 1px;
+}
+
+/* Ana Taþýyýcý */
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+/* Sorgulama Paneli Kartý */
+.search-panel {
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    align-items: flex-end;
+}
+
+.input-item {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+    .input-item.half-width {
+        flex: 0.5;
+    }
+
+    .input-item label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #003366;
+        margin-bottom: 6px;
+    }
+
+    .input-item input,
+    .input-item select {
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+        .input-item input:focus,
+        .input-item select:focus {
+            border-color: #00509e;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 80, 158, 0.3);
+        }
+
+/* Ünvan ve Arama Butonu Yan Yana */
+.search-input-wrapper {
+    display: flex;
+    gap: 10px;
+}
+
+    .search-input-wrapper input {
+        flex: 1;
+    }
+
+/* Butonlar */
+.btn-search {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0 25px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+    .btn-search:hover {
+        background-color: #218838;
+    }
+
+.action-item {
+    display: flex;
+    align-items: flex-end;
+    margin-left: auto;
+}
+
+.btn-excel {
+    background-color: #00509e;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s;
+}
+
+    .btn-excel:hover {
+        background-color: #003366;
+    }
+
+/* Veri Tablosu */
+.data-table-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    overflow: hidden; /* Kenar yuvarlaklýklarýný korumak için */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+thead {
+    background-color: #e9ecef;
+}
+
+th {
+    padding: 15px;
+    font-size: 14px;
+    color: #003366;
+    border-bottom: 2px solid #dee2e6;
+}
+
+td {
+    padding: 12px 15px;
+    font-size: 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+tfoot {
+    background-color: #e9ecef;
+    font-weight: bold;
+}
+
+.table-footer {
+    text-align: right;
+    padding: 15px;
+    color: #003366;
+}
+.logo-img {
+    height: 55px;
+    width: auto;
+    margin-right: 20px;
+}
+/* Tabloyu saran dýþ kutu */
+.data-table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e0e0;
+    background-color: #ffffff;
+    margin-top: 20px;
+    /* Firefox tarayýcýlar için özel scrollbar ayarý */
+    scrollbar-width: thin;
+    scrollbar-color: #a0aec0 #ffffff;
+}
+
+    /* Chrome, Edge, Safari, Opera Ýçin Modern Scrollbar */
+    .data-table-container::-webkit-scrollbar {
+        width: 10px; /* Ýnce ve zarif */
+    }
+
+    .data-table-container::-webkit-scrollbar-track {
+        background: transparent; /* Arka planý þeffaf yapýp süzülme hissi verir */
+    }
+
+    .data-table-container::-webkit-scrollbar-thumb {
+        background-color: #a0aec0; /* Göz yormayan þýk metalik gri */
+        border-radius: 10px; /* Tam yuvarlak hatlar */
+        border: 2px solid #ffffff; /* Beyaz çerçeve ile kenarlardan boþluk býrakýr */
+    }
+
+        .data-table-container::-webkit-scrollbar-thumb:hover {
+            background-color: #64748b; /* Üzerine gelince koyulaþýr */
+        }
+/* Alt Toplam Bilgisini Sað Altta Sabitleme (Sticky Footer) */
+#firmaTable tfoot {
+    position: sticky;
+    bottom: 0; /* Kutunun en altýna çiviler */
+    z-index: 3; /* Verilerin üstünde kalmasýný saðlar */
+}
+
+    #firmaTable tfoot td {
+        background-color: #f1f3f5; /* Þýk ve temiz bir gri arka plan */
+        color: #2c3e50; /* Kurumsal lacivert yazý rengi */
+        padding: 14px 20px;
+        font-weight: 700; /* Kalýn yazý */
+        text-align: right; /* Sað alt köþede kalmasýný garantiler */
+        border-top: 2px solid #cbd5e1; /* Üst kýsýmdan ayýran ince çizgi */
+        /* SÝHÝRLÝ DOKUNUÞ: Üstteki veriler kayarken altýndan geçiyormuþ hissi veren gölge */
+        box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.05);
+    }
+/* =========================================
+   KARANLIK MOD (DARK MODE) AYARLARI 
+   ========================================= */
+
+/* Geçiþlerin yumuþak olmasý için background özelliðini de ekledik */
+body, body * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+
+    /* Koyu Mod Aktif Olduðunda Çalýþacak Ana Kurallar */
+    body.dark-mode {
+        background-color: #121212 !important;
+        color: #f8f9fa !important;
+    }
+
+        /* 1. Header (En Üst Kýsým) 
+   Gradyaný (linear-gradient) ezmek için background-color yerine background kullanýyoruz */
+        body.dark-mode .header {
+            background: #1e1e1e !important;
+            border-bottom: 1px solid #333;
+        }
+
+        body.dark-mode .logo-placeholder {
+            background-color: #2a2a2a !important;
+            color: #f8f9fa !important;
+            border-color: #555 !important;
+        }
+
+        /* 2. Ana Paneller (Arama Kartý ve Tablo Konteyneri) */
+        body.dark-mode .search-panel,
+        body.dark-mode .data-table-container {
+            background-color: #1e1e1e !important;
+            border: 1px solid #333 !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+        }
+
+        /* 3. Input ve Select Kutularý (Form Elemanlarý) */
+        body.dark-mode .input-item input,
+        body.dark-mode .input-item select {
+            background-color: #2a2a2a !important;
+            color: #f8f9fa !important;
+            border-color: #444 !important;
+        }
+
+            body.dark-mode .input-item input:focus,
+            body.dark-mode .input-item select:focus {
+                border-color: #6ea8fe !important;
+                box-shadow: 0 0 5px rgba(110, 168, 254, 0.4) !important;
+            }
+
+        /* 4. Tablo ve Ýçeriði (Table, Thead, Tbody, Tfoot) */
+        body.dark-mode table,
+        body.dark-mode td,
+        body.dark-mode th {
+            background-color: #1e1e1e !important;
+            color: #f8f9fa !important;
+            border-color: #333 !important;
+        }
+
+        /* Tablo Baþlýðý */
+        body.dark-mode thead {
+            background-color: #2a2a2a !important;
+        }
+
+        body.dark-mode th {
+            border-bottom: 2px solid #444 !important;
+        }
+
+        /* Tablo üzerine gelince (Hover) */
+        body.dark-mode tbody tr:hover td {
+            background-color: #2a2a2a !important;
+        }
+
+        /* En Alt Toplam Bilgisi (Sticky Footer) */
+        body.dark-mode #firmaTable tfoot td {
+            background-color: #2a2a2a !important;
+            color: #f8f9fa !important;
+            border-top: 2px solid #555 !important;
+            box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        /* 5. Yazýlar ve Linkler */
+        body.dark-mode .input-item label,
+        body.dark-mode .table-footer,
+        body.dark-mode .empty-state {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode a.text-primary {
+            color: #6ea8fe !important;
+        }
+
+            body.dark-mode a.text-primary:hover {
+                color: #9ec5fe !important;
+            }
+.page-dots {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-weight: bold;
+    color: #777;
+    user-select: none;
+}
