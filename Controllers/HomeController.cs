@@ -5,13 +5,19 @@ using System.Data; //
 using System.Collections.Generic; //
 using System.IO; // 
 using System; //  
+using Microsoft.Extensions.Configuration;
 
 namespace ItoFirmaSorgulama.Controllers // Controller dosyalarýnýn bulunduðu alan.
 {
     public class HomeController : Controller // Ana sayfayý yöneten controller sýnýfý.
     {
+        private readonly IConfiguration _configuration;
+
+        public HomeController(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
         // Veritabanýna baðlanmak için gerekli bilgiler.
-        private readonly string baglantiCumlesi = "Server=localhost;Database=ItoRehber;Uid=root;Pwd=123456789;Charset=utf8mb4;";
 
         public IActionResult Index() // Ana sayfa açýldýðýnda çalýþan metot.
         {
@@ -31,7 +37,7 @@ namespace ItoFirmaSorgulama.Controllers // Controller dosyalarýnýn bulunduðu ala
 
             try // Hata oluþursa programýn durmamasý için kullanýlýr.
             {
-                using (MySqlConnection baglanti = new MySqlConnection(baglantiCumlesi)) // Veritabaný baðlantýsý oluþturulur.
+                using (MySqlConnection baglanti = new MySqlConnection(_configuration.GetConnectionString("ItoRehber")))
                 {
                     baglanti.Open(); // Veritabaný baðlantýsý açýlýr.
 
@@ -102,7 +108,7 @@ namespace ItoFirmaSorgulama.Controllers // Controller dosyalarýnýn bulunduðu ala
 
             try
             {
-                using (MySqlConnection baglanti = new MySqlConnection(baglantiCumlesi)) // Veritabanýna baðlanýlýr.
+                using (MySqlConnection baglanti = new MySqlConnection(_configuration.GetConnectionString("ItoRehber")))
                 {
                     baglanti.Open();
 
