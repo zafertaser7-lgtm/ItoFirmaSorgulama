@@ -1,4 +1,7 @@
 .vs/
 bin/
 obj/
-appsettings.json
+*.user
+*.suo
+.vscode/
+appsettings.Development.json
