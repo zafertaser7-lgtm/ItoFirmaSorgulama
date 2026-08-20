@@ -1,15 +1,11 @@
-using Microsoft.AspNetCore.Mvc; // 
-using MySql.Data.MySqlClient; // 
-using ClosedXML.Excel; // 
-using System.Data; // 
-using System.Collections.Generic; //
-using System.IO; // 
-using System; //  
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Mvc;
+using MySql.Data.MySqlClient;
+using ClosedXML.Excel;
+using System.Data;
 
-namespace ItoFirmaSorgulama.Controllers // Controller dosyalarýnýn bulunduðu alan.
+namespace ItoFirmaSorgulama.Controllers
 {
-    public class HomeController : Controller // Ana sayfayý yöneten controller sýnýfý.
+    public class HomeController : Controller
     {
         private readonly IConfiguration _configuration;
 
@@ -17,159 +13,414 @@ namespace ItoFirmaSorgulama.Controllers // Controller dosyalarýnýn bulunduðu ala
         {
             _configuration = configuration;
         }
-        // Veritabanýna baðlanmak için gerekli bilgiler.
 
-        public IActionResult Index() // Ana sayfa açýldýðýnda çalýþan metot.
+        // =========================================================
+        // ANA SAYFA
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult Index()
         {
-            return View(); // Index sayfasýný kullanýcýya gösterir.
+            return View();
         }
 
-        [HttpGet] // Bu metot GET isteði ile çalýþýr.
-        public IActionResult FirmaAra(string kelime, string ilce, string meslek, string odaSicil, string ticaretSicil)
-        {
-            List<object> firmalar = new List<object>(); // Bulunan firmalarý tutacak liste.
 
-            // Hiçbir arama kriteri girilmediyse boþ liste döndürür.
-            if (string.IsNullOrEmpty(kelime) && string.IsNullOrEmpty(ilce) && string.IsNullOrEmpty(meslek) && string.IsNullOrEmpty(odaSicil) && string.IsNullOrEmpty(ticaretSicil))
+        // =========================================================
+        // FÝRMA ARAMA
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult FirmaAra(
+            string? kelime,
+            string? ilce,
+            string? meslek,
+            string? odaSicil,
+            string? ticaretSicil)
+        {
+            List<object> firmalar = new List<object>();
+
+            if (string.IsNullOrWhiteSpace(kelime) &&
+                string.IsNullOrWhiteSpace(ilce) &&
+                string.IsNullOrWhiteSpace(meslek) &&
+                string.IsNullOrWhiteSpace(odaSicil) &&
+                string.IsNullOrWhiteSpace(ticaretSicil))
             {
                 return Json(firmalar);
             }
 
-            try // Hata oluþursa programýn durmamasý için kullanýlýr.
+            try
             {
-                using (MySqlConnection baglanti = new MySqlConnection(_configuration.GetConnectionString("ItoRehber")))
+                using MySqlConnection baglanti =
+                    new MySqlConnection(
+                        _configuration.GetConnectionString("ItoRehber"));
+
+                baglanti.Open();
+
+                string sql = @"
+                    SELECT
+                        f.Id,
+                        f.OdaSicilNo,
+                        f.TicaretSicilNo,
+                        CONCAT(m.GrupKodu, ' - ', m.GrupAdi) AS GrupAdi,
+                        i.IlceAdi,
+                        f.Unvan,
+                        f.Adres,
+                        f.WebAdresi
+                    FROM Firmalar f
+                    INNER JOIN Ilceler i
+                        ON f.IlceId = i.Id
+                    INNER JOIN MeslekGruplari m
+                        ON f.MeslekGrubuId = m.Id
+                    WHERE 1 = 1";
+
+
+                if (!string.IsNullOrWhiteSpace(kelime))
+                    sql += " AND f.Unvan LIKE @kelime";
+
+                if (!string.IsNullOrWhiteSpace(ilce))
+                    sql += " AND i.IlceAdi = @ilce";
+
+                if (!string.IsNullOrWhiteSpace(meslek))
+                    sql += " AND m.GrupKodu = @meslek";
+
+                if (!string.IsNullOrWhiteSpace(odaSicil))
+                    sql += " AND f.OdaSicilNo LIKE @odaSicil";
+
+                if (!string.IsNullOrWhiteSpace(ticaretSicil))
+                    sql += " AND f.TicaretSicilNo LIKE @ticaretSicil";
+
+
+                sql += " ORDER BY f.Unvan";
+
+
+                using MySqlCommand komut =
+                    new MySqlCommand(sql, baglanti);
+
+
+                if (!string.IsNullOrWhiteSpace(kelime))
                 {
-                    baglanti.Open(); // Veritabaný baðlantýsý açýlýr.
-
-                    // Firmalar tablosundan gerekli bilgiler çekilir.
-                    string sql = @"
-                    SELECT f.OdaSicilNo, f.TicaretSicilNo,
-                    CONCAT(m.GrupKodu, ' - ', m.GrupAdi) AS GrupAdi,
-                        i.IlceAdi, f.Unvan, f.Adres, f.WebAdresi      FROM Firmalar f
-                        INNER JOIN Ilceler i ON f.IlceId = i.Id
-                        INNER JOIN MeslekGruplari m ON f.MeslekGrubuId = m.Id
-                        WHERE 1=1";
-
-                    // Kullanýcý hangi alaný doldurduysa sorguya eklenir.
-                    if (!string.IsNullOrEmpty(kelime)) sql += " AND f.Unvan LIKE @kelime";
-                    if (!string.IsNullOrEmpty(ilce)) sql += " AND i.IlceAdi = @ilce";
-                    if (!string.IsNullOrEmpty(meslek)) sql += " AND m.GrupKodu = @meslek";
-                    if (!string.IsNullOrEmpty(odaSicil)) sql += " AND f.OdaSicilNo LIKE @odaSicil";
-                    if (!string.IsNullOrEmpty(ticaretSicil)) sql += " AND f.TicaretSicilNo LIKE @ticaretSicil";
-
-
-                    using (MySqlCommand komut = new MySqlCommand(sql, baglanti)) // SQL komutu oluþturulur.
-                    {
-                        // Girilen deðerler güvenli þekilde sorguya eklenir.
-                        if (!string.IsNullOrEmpty(kelime)) komut.Parameters.AddWithValue("@kelime", "%" + kelime + "%");
-                        if (!string.IsNullOrEmpty(ilce)) komut.Parameters.AddWithValue("@ilce", ilce);
-                        if (!string.IsNullOrEmpty(meslek)) komut.Parameters.AddWithValue("@meslek", meslek);
-                        if (!string.IsNullOrEmpty(odaSicil)) komut.Parameters.AddWithValue("@odaSicil", "%" + odaSicil + "%");
-                        if (!string.IsNullOrEmpty(ticaretSicil)) komut.Parameters.AddWithValue("@ticaretSicil", "%" + ticaretSicil + "%");
-
-                        using (MySqlDataReader okuyucu = komut.ExecuteReader()) // Sorgu çalýþtýrýlýr.
-                        {
-                            while (okuyucu.Read()) // Gelen tüm kayýtlar tek tek okunur.
-                            {
-                                firmalar.Add(new // Okunan bilgiler listeye eklenir.
-                                {
-                                    odaSicilNo = okuyucu["OdaSicilNo"].ToString(),
-                                    ticaretSicilNo = okuyucu["TicaretSicilNo"].ToString(),
-                                    meslekGrubu = okuyucu["GrupAdi"].ToString(),
-                                    unvan = okuyucu["Unvan"].ToString(),
-                                    ilceAdi = okuyucu["IlceAdi"].ToString(),
-                                    adres = okuyucu["Adres"].ToString(),
-                                    webAdresi = okuyucu["WebAdresi"].ToString()
-                                });
-                            }
-                        }
-                    }
+                    komut.Parameters.AddWithValue(
+                        "@kelime",
+                        "%" + kelime.Trim() + "%");
                 }
-            }
-            catch (Exception ex) // Hata oluþursa çalýþýr.
-            {
-                Console.WriteLine("Veritabaný Hatasý: " + ex.Message); // Hata mesajýný konsola yazdýrýr.
-            }
 
-            return Json(firmalar); // Bulunan firmalarý JSON olarak gönderir.
+                if (!string.IsNullOrWhiteSpace(ilce))
+                {
+                    komut.Parameters.AddWithValue(
+                        "@ilce",
+                        ilce.Trim());
+                }
+
+                if (!string.IsNullOrWhiteSpace(meslek))
+                {
+                    komut.Parameters.AddWithValue(
+                        "@meslek",
+                        meslek.Trim());
+                }
+
+                if (!string.IsNullOrWhiteSpace(odaSicil))
+                {
+                    komut.Parameters.AddWithValue(
+                        "@odaSicil",
+                        "%" + odaSicil.Trim() + "%");
+                }
+
+                if (!string.IsNullOrWhiteSpace(ticaretSicil))
+                {
+                    komut.Parameters.AddWithValue(
+                        "@ticaretSicil",
+                        "%" + ticaretSicil.Trim() + "%");
+                }
+
+
+                using MySqlDataReader okuyucu =
+                    komut.ExecuteReader();
+
+
+                while (okuyucu.Read())
+                {
+                    firmalar.Add(new
+                    {
+                        id = okuyucu["Id"].ToString(),
+
+                        odaSicilNo =
+                            okuyucu["OdaSicilNo"].ToString(),
+
+                        ticaretSicilNo =
+                            okuyucu["TicaretSicilNo"].ToString(),
+
+                        meslekGrubu =
+                            okuyucu["GrupAdi"].ToString(),
+
+                        unvan =
+                            okuyucu["Unvan"].ToString(),
+
+                        ilceAdi =
+                            okuyucu["IlceAdi"].ToString(),
+
+                        adres =
+                            okuyucu["Adres"].ToString(),
+
+                        webAdresi =
+                            okuyucu["WebAdresi"].ToString()
+                    });
+                }
+
+
+                return Json(firmalar);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        success = false,
+                        message = ex.Message
+                    });
+            }
         }
 
-        [HttpGet] // Excel indirme isteði GET ile çalýþýr.
-        public IActionResult ExcelIndir(string kelime, string ilce, string meslek, string odaSicil, string ticaretSicil)
-        {
-            DataTable dt = new DataTable("UyeFirmalar"); // Excel için tablo oluþturulur.
 
-            // Excel sütunlarý oluþturulur.
+        // =========================================================
+        // FÝRMA DETAY
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult FirmaDetay(int id)
+        {
+            try
+            {
+                using MySqlConnection baglanti =
+                    new MySqlConnection(
+                        _configuration.GetConnectionString("ItoRehber"));
+
+                baglanti.Open();
+
+
+                string sql = @"
+                    SELECT
+                        f.Id,
+                        f.OdaSicilNo,
+                        f.TicaretSicilNo,
+                        f.Unvan,
+                        f.Adres,
+                        f.WebAdresi,
+                        i.IlceAdi,
+                        CONCAT(m.GrupKodu, ' - ', m.GrupAdi) AS GrupAdi
+                    FROM Firmalar f
+                    INNER JOIN Ilceler i
+                        ON f.IlceId = i.Id
+                    INNER JOIN MeslekGruplari m
+                        ON f.MeslekGrubuId = m.Id
+                    WHERE f.Id = @id
+                    LIMIT 1";
+
+
+                using MySqlCommand komut =
+                    new MySqlCommand(sql, baglanti);
+
+                komut.Parameters.AddWithValue("@id", id);
+
+
+                using MySqlDataReader okuyucu =
+                    komut.ExecuteReader();
+
+
+                if (okuyucu.Read())
+                {
+                    var firma = new
+                    {
+                        Id = okuyucu["Id"].ToString(),
+
+                        OdaSicilNo =
+                            okuyucu["OdaSicilNo"].ToString(),
+
+                        TicaretSicilNo =
+                            okuyucu["TicaretSicilNo"].ToString(),
+
+                        Unvan =
+                            okuyucu["Unvan"].ToString(),
+
+                        Adres =
+                            okuyucu["Adres"].ToString(),
+
+                        WebAdresi =
+                            okuyucu["WebAdresi"].ToString(),
+
+                        IlceAdi =
+                            okuyucu["IlceAdi"].ToString(),
+
+                        GrupAdi =
+                            okuyucu["GrupAdi"].ToString()
+                    };
+
+                    return View(firma);
+                }
+
+
+                return NotFound(
+                    "Bu ID numarasýna ait firma bulunamadý.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    "Firma detay hatasý: " + ex.Message);
+            }
+        }
+
+
+        // =========================================================
+        // EXCEL ÝNDÝR
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult ExcelIndir(
+            string? kelime,
+            string? ilce,
+            string? meslek,
+            string? odaSicil,
+            string? ticaretSicil)
+        {
+            DataTable dt =
+                new DataTable("UyeFirmalar");
+
+
             dt.Columns.Add("Oda Sicil No");
             dt.Columns.Add("Ticaret Sicil No");
             dt.Columns.Add("Meslek Grubu");
             dt.Columns.Add("Ýlçe");
-            dt.Columns.Add("Ünvaný");
+            dt.Columns.Add("Ünvan");
+            dt.Columns.Add("Adres");
+            dt.Columns.Add("Web Adresi");
+
 
             try
             {
-                using (MySqlConnection baglanti = new MySqlConnection(_configuration.GetConnectionString("ItoRehber")))
+                using MySqlConnection baglanti =
+                    new MySqlConnection(
+                        _configuration.GetConnectionString("ItoRehber"));
+
+                baglanti.Open();
+
+
+                string sql = @"
+                    SELECT
+                        f.OdaSicilNo,
+                        f.TicaretSicilNo,
+                        CONCAT(m.GrupKodu, ' - ', m.GrupAdi) AS GrupAdi,
+                        i.IlceAdi,
+                        f.Unvan,
+                        f.Adres,
+                        f.WebAdresi
+                    FROM Firmalar f
+                    INNER JOIN Ilceler i
+                        ON f.IlceId = i.Id
+                    INNER JOIN MeslekGruplari m
+                        ON f.MeslekGrubuId = m.Id
+                    WHERE 1 = 1";
+
+
+                if (!string.IsNullOrWhiteSpace(kelime))
+                    sql += " AND f.Unvan LIKE @kelime";
+
+                if (!string.IsNullOrWhiteSpace(ilce))
+                    sql += " AND i.IlceAdi = @ilce";
+
+                if (!string.IsNullOrWhiteSpace(meslek))
+                    sql += " AND m.GrupKodu = @meslek";
+
+                if (!string.IsNullOrWhiteSpace(odaSicil))
+                    sql += " AND f.OdaSicilNo LIKE @odaSicil";
+
+                if (!string.IsNullOrWhiteSpace(ticaretSicil))
+                    sql += " AND f.TicaretSicilNo LIKE @ticaretSicil";
+
+
+                sql += " ORDER BY f.Unvan";
+
+
+                using MySqlCommand komut =
+                    new MySqlCommand(sql, baglanti);
+
+
+                if (!string.IsNullOrWhiteSpace(kelime))
+                    komut.Parameters.AddWithValue(
+                        "@kelime",
+                        "%" + kelime.Trim() + "%");
+
+
+                if (!string.IsNullOrWhiteSpace(ilce))
+                    komut.Parameters.AddWithValue(
+                        "@ilce",
+                        ilce.Trim());
+
+
+                if (!string.IsNullOrWhiteSpace(meslek))
+                    komut.Parameters.AddWithValue(
+                        "@meslek",
+                        meslek.Trim());
+
+
+                if (!string.IsNullOrWhiteSpace(odaSicil))
+                    komut.Parameters.AddWithValue(
+                        "@odaSicil",
+                        "%" + odaSicil.Trim() + "%");
+
+
+                if (!string.IsNullOrWhiteSpace(ticaretSicil))
+                    komut.Parameters.AddWithValue(
+                        "@ticaretSicil",
+                        "%" + ticaretSicil.Trim() + "%");
+
+
+                using MySqlDataReader okuyucu =
+                    komut.ExecuteReader();
+
+
+                while (okuyucu.Read())
                 {
-                    baglanti.Open();
-
-                    // Excel'e aktarýlacak veriler seçilir.
-                    string sql = @"
-                        SELECT f.OdaSicilNo, f.TicaretSicilNo, m.GrupAdi, i.IlceAdi, f.Unvan 
-                        FROM Firmalar f
-                        INNER JOIN Ilceler i ON f.IlceId = i.Id
-                        INNER JOIN MeslekGruplari m ON f.MeslekGrubuId = m.Id
-                        WHERE 1=1";
-
-                    // Arama kriterleri varsa sorguya eklenir.
-                    if (!string.IsNullOrEmpty(kelime)) sql += " AND f.Unvan LIKE @kelime";
-                    if (!string.IsNullOrEmpty(ilce)) sql += " AND i.IlceAdi = @ilce";
-                    if (!string.IsNullOrEmpty(meslek)) sql += " AND m.GrupKodu = @meslek";
-                    if (!string.IsNullOrEmpty(odaSicil)) sql += " AND f.OdaSicilNo LIKE @odaSicil";
-                    if (!string.IsNullOrEmpty(ticaretSicil)) sql += " AND f.TicaretSicilNo LIKE @ticaretSicil";
-
-                    using (MySqlCommand komut = new MySqlCommand(sql, baglanti)) // SQL komutu oluþturulur.
-                    {
-                        // Parametreler güvenli þekilde eklenir.
-                        if (!string.IsNullOrEmpty(kelime)) komut.Parameters.AddWithValue("@kelime", "%" + kelime + "%");
-                        if (!string.IsNullOrEmpty(ilce)) komut.Parameters.AddWithValue("@ilce", ilce);
-                        if (!string.IsNullOrEmpty(meslek)) komut.Parameters.AddWithValue("@meslek", meslek);
-                        if (!string.IsNullOrEmpty(odaSicil)) komut.Parameters.AddWithValue("@odaSicil", "%" + odaSicil + "%");
-                        if (!string.IsNullOrEmpty(ticaretSicil)) komut.Parameters.AddWithValue("@ticaretSicil", "%" + ticaretSicil + "%");
-
-                        using (MySqlDataReader okuyucu = komut.ExecuteReader()) // Veriler okunur.
-                        {
-                            while (okuyucu.Read()) // Her kayýt tabloya eklenir.
-                            {
-                                dt.Rows.Add(
-                                    okuyucu["OdaSicilNo"].ToString(),
-                                    okuyucu["TicaretSicilNo"].ToString(),
-                                    okuyucu["GrupAdi"].ToString(),
-                                    okuyucu["IlceAdi"].ToString(),
-                                    okuyucu["Unvan"].ToString()
-                                );
-                            }
-                        }
-                    }
+                    dt.Rows.Add(
+                        okuyucu["OdaSicilNo"].ToString(),
+                        okuyucu["TicaretSicilNo"].ToString(),
+                        okuyucu["GrupAdi"].ToString(),
+                        okuyucu["IlceAdi"].ToString(),
+                        okuyucu["Unvan"].ToString(),
+                        okuyucu["Adres"].ToString(),
+                        okuyucu["WebAdresi"].ToString()
+                    );
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Hata olsa bile uygulamanýn kapanmasýný engeller.
+                return Content(
+                    "Excel aktarým hatasý: " + ex.Message);
             }
 
-            using (XLWorkbook wb = new XLWorkbook()) // Yeni Excel dosyasý oluþturulur.
-            {
-                wb.Worksheets.Add(dt); // Tablo Excel'e eklenir.
-                wb.Worksheet(1).Columns().AdjustToContents(); // Sütun geniþlikleri otomatik ayarlanýr.
 
-                using (MemoryStream stream = new MemoryStream()) // Excel bellekte oluþturulur.
-                {
-                    wb.SaveAs(stream); // Excel dosyasý belleðe kaydedilir.
+            using XLWorkbook wb =
+                new XLWorkbook();
 
-                    // Oluþturulan Excel dosyasý kullanýcýya indirilir.
-                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheet");
-                }
-            }
+            wb.Worksheets.Add(dt);
+
+
+            var worksheet = wb.Worksheet(1);
+
+            worksheet.Columns().AdjustToContents();
+
+
+            using MemoryStream stream =
+                new MemoryStream();
+
+            wb.SaveAs(stream);
+
+
+            return File(
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "ItoFirmaListesi.xlsx"
+            );
         }
     }
 }
